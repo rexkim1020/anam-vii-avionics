@@ -319,7 +319,7 @@ Designed in **EasyEDA**.
 Software lives in a separate repository, organised by launch — Rev 1 firmware, the Rev 2 flight
 build, the telemetry-enabled build it was derived from, first-stage firmware, the receiver-board
 firmware, the PC ground-station dashboard, bench scripts and ground-test logs:
-**[anam-vii](https://github.com/<계정>/anam-vii)**
+**[anam-vii](https://github.com/rexkim1020/anam-vii)**
 
 ---
 
