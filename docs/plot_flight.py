@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-SRC = "/mnt/user-data/uploads/07312단부.xlsx"
+SRC = "0731_stage2.xlsx"
 
 df = pd.read_excel(SRC)
 df["t"] = (df.t_ms - df.t_ms.iloc[0]) / 1000.0
