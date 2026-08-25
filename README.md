@@ -45,12 +45,6 @@ arrive before the build, so the board flew with a spare **WT901** left over from
 WitMotion modules share the same UART interface and pin order, so the substitution was a
 drop-in; the schematic symbol was never updated to match. Firmware targets the WT901.
 
-### Telemetry
-
-https://github.com/user-attachments/assets/9d17571c-7b28-4119-b0b4-41e68246e9f8
-
-*Ground station receiving live telemetry over the LoRa link during a bench test.*
-
 ### Power architecture
 
 Both revisions run two independently switched battery rails, each with its own arming switch, so
@@ -340,6 +334,16 @@ layer as intended.*
 ![Rev 2 avionics stack mounted](docs/images/rev2-stack-mounted.jpg)
 
 *First- and second-stage avionics on the airframe mount, July configuration.*
+
+### Telemetry
+
+The E32-433T20D LoRa link and its ground station were built and validated on the bench for both
+revisions, but neither board flew with telemetry active: the 433 MHz band is not available for
+unlicensed use in Korea. Flight data was recorded to the onboard microSD card instead.
+
+https://github.com/user-attachments/assets/9d17571c-7b28-4119-b0b4-41e68246e9f8
+
+*Ground station receiving live telemetry over the LoRa link during a bench test.*
 
 ### Result
 
