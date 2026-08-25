@@ -8,10 +8,14 @@ The board handles altitude sensing, launch detection, second-stage ignition, par
 CanSat deployment, onboard data logging, and a LoRa telemetry downlink used during ground
 testing.
 
-Two revisions flew during the 2026 test campaign. **Revision 1 suffered a premature
-second-stage ignition on the launch pad.** Revision 2, built around the root-cause analysis of
-that failure, flew successfully. This repository documents both, including what went wrong and
-why the fix was designed the way it was.
+Two revisions flew during the 2026 test campaign, and neither vehicle had a clean flight.
+**Revision 1 suffered a premature second-stage ignition on the launch pad**, traced to the
+avionics. **Revision 2's avionics performed as designed** — it detected launch without a false
+trigger, issued ignition on schedule, deployed the parachute, and logged the entire event —
+**but the vehicle failed on propulsion and staging** and came down under a still-venting motor.
+
+This repository documents both, including what went wrong, what the fix was, and where the
+boundary lies between what the avionics controlled and what it did not.
 
 **Role:** second-stage avionics lead — schematic capture, PCB layout, bring-up, failure
 analysis, and the Rev 2 redesign.
@@ -38,7 +42,7 @@ analysis, and the Rev 2 redesign.
 | 5 V for SD / buzzer | taken from the UBEC rail | **dedicated 3.3 V → 5 V step-up converter** |
 | Board | 2-layer, 80 × 100 mm | 2-layer, 80 × 100 mm |
 | Reverse-polarity protection | 2 × AO3401 P-MOSFET | removed (see below) |
-| Outcome | premature pad ignition; parachute did not deploy | **nominal flight** |
+| Outcome | premature pad ignition; parachute did not deploy | **avionics nominal; vehicle failed on staging** |
 
 ¹ The Rev 2 schematic in this repository specifies a **WT61**. The ordered WT61 units did not
 arrive before the build, so the board flew with a spare **WT901** left over from Rev 1. The two
@@ -347,7 +351,84 @@ https://github.com/user-attachments/assets/9d17571c-7b28-4119-b0b4-41e68246e9f8
 
 ### Result
 
-Rev 2 flew nominally in the second test launch, July 2026.
+Rev 2 flew on 31 July 2026. **The avionics met every one of its requirements. The vehicle did
+not fly as intended.**
+
+Flight data recovered from the onboard SD card:
+
+![Rev 2 flight profile](docs/images/flight-profile.png)
+
+*Altitude, acceleration magnitude and tilt, with flight-mode bands and event markers.
+Logged at ~39 Hz.*
+
+| | |
+|---|---|
+| Liftoff (`launch_t0`) | T+0.67 s, confirmed at T+1.67 s after the 1 s umbilical debounce |
+| First-stage burn | T+0.28 s to ≈T+1.7 s, peak 3.81 g |
+| Second-stage ignition command | T+3.61 s at 48.4 m — fired by the 3 s post-launch backup timer |
+| Apogee | 51.4 m at T+4.36 s |
+| Tilt exceeded 45° | T+5.79 s |
+| Parachute deployed | T+6.69 s at 30.2 m, by tilt abort, at 92.9° |
+| CanSat | carried, deliberately not released — see below |
+| Logging | continuous to impact, ~39 Hz |
+
+**What the avionics did right.** It sat armed on the pad without a false trigger — the Rev 1
+failure mode did not recur. It detected liftoff, sequenced correctly through all four flight
+modes, issued the second-stage ignition command, deployed the parachute, and kept logging at
+full rate through a tumbling descent under a burning motor.
+
+Three details from the log are worth drawing out, because each shows a design decision being
+exercised for real:
+
+**The burnout detector never fired, and the backup timer covered for it.** Second-stage ignition
+is gated on an altitude floor plus *either* detected first-stage burnout plus 1 s, *or* a 3 s
+timer from `launch_t0` as a backup. The burnout criterion — axial acceleration at or below
+−1 g held for 200 ms — was never satisfied: axial acceleration reaches a minimum of −0.53 g
+across the whole flight, because a coasting vehicle in near-freefall reads close to zero, not
+−1 g. The threshold was set for a deceleration regime this flight never entered. The 3 s backup
+timer issued the command instead, at `launch_t0` + 2.94 s. **The redundant path is the only
+reason the ignition command went out at all.**
+
+**The parachute came out on the tilt abort, not on a timer.** Neither the burnout-plus-3 s path
+nor the 9 s post-ignition backup had been reached. Tilt crossed the 45° abort threshold at
+T+5.79 s and kept climbing; the parachute command went out at 92.9°. The vehicle was very nearly
+on its side by then.
+
+The 903 ms between threshold crossing and deployment is longer than the 300 ms hold the abort
+requires, and the log explains part of that but not all of it. Two things are measurable.
+Logging is not isochronous: the median sample interval is 21 ms but nineteen gaps exceed 50 ms
+and one reaches 177 ms, as SD writes and garbage collection block the loop. More significantly,
+the attitude estimate updates far more slowly than the log samples it — across those 28 rows
+`tilt_deg` takes only eight distinct values, roughly one update every 113 ms. A 300 ms hold
+therefore rests on about three fresh attitude samples, which is a coarse basis for a timed
+criterion.
+
+What the log cannot settle is whether tilt dipped back below the threshold and reset the hold
+timer between updates. No logged sample falls below 45° after the crossing, but at a 113 ms
+update interval the record is too sparse to rule it out. Either way the behaviour was
+functionally correct — the parachute deployed while the vehicle was unambiguously tumbling —
+and the open item for a future revision is the update rate and loop determinism, not the
+threshold itself.
+
+**The CanSat was withheld by design.** Release is suppressed whenever the parachute was
+triggered by tilt abort — an uncontrolled attitude is not a state to eject a second body into.
+That suppression is why the `cansat` flag stays low for the whole log, and it is correct
+behaviour rather than a failure. The timing path would not have been reached in any case: the
+release window opens 2 s after parachute deployment, at T+8.69 s, and the log ends at T+7.70 s.
+
+**What went wrong with the vehicle.** The rocket reached only ~51 m, far short of the intended
+trajectory. The propellant grains in both stages were not in the condition assumed by the flight
+plan, and the resulting underperformance meant that when the ignition command was issued the
+stages did not separate cleanly. The second-stage motor never produced usable thrust: the
+accelerometer reads 0.02 g across the entire ignition window, and the vehicle descended while
+the motor continued to vent.
+
+None of that is an avionics fault, and none of it was in this subsystem's control — propellant
+preparation and stage separation hardware belonged to other sections of the team. What the
+avionics contributed to the post-flight investigation was the record: a continuous, timestamped
+account of exactly when each command was issued and what the vehicle did in response.
+
+This is, in the end, what flight instrumentation is for.
 
 ---
 
