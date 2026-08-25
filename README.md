@@ -439,8 +439,9 @@ hardware/
   rev1/                  schematic and PCB (June 2026 flight configuration)
   rev2/                  schematic and PCB (July 2026 flight configuration)
 docs/
-  failure-analysis.md    Rev 1 pad anomaly write-up
-  images/                board photos and deployment-test footage
+  images/                board photos, deployment-test footage, flight profile plot
+  plot_flight.py         reads the Rev 2 SD log and produces the flight profile above
+  0731_stage2.xlsx       raw Rev 2 flight log, 31 July 2026
 ```
 
 Designed in **EasyEDA**.
