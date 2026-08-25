@@ -27,6 +27,10 @@ analysis, and the Rev 2 redesign.
 | Barometer | BMP280 | **BMP581** |
 | IMU | WT901 (9-axis, UART) | WT901 (9-axis, UART)¹ |
 | Telemetry radio | E32-433T20D (LoRa, 433 MHz) — not flown | E32-433T20D (LoRa, 433 MHz) — not flown |
+https://github.com/user-attachments/assets/9d17571c-7b28-4119-b0b4-41e68246e9f8
+
+*Ground station receiving live telemetry over the LoRa link during a bench test.*
+
 | Storage | microSD module (SPI) | microSD module (SPI) |
 | Actuators | 3 × MG996R servo | 3 × MG996R servo |
 | Ignition switching | AO3400 MOSFET + SLA-5VDC-SL-A relay | AO3400 MOSFET + **HR702-NH-DC5V relay** |
