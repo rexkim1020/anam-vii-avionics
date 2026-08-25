@@ -25,7 +25,7 @@ analysis, and the Rev 2 redesign.
 | MCU | Raspberry Pi Pico (RP2040) | Raspberry Pi Pico (RP2040) |
 | Firmware | MicroPython, single file | **MicroPython, modular (HAL / config / storage split)** |
 | Barometer | BMP280 | **BMP581** |
-| IMU | WT901 (9-axis, UART) | WT901 (9-axis, UART) |
+| IMU | WT901 (9-axis, UART) | WT901 (9-axis, UART)¹ |
 | Telemetry radio | E32-433T20D (LoRa, 433 MHz) — not flown | E32-433T20D (LoRa, 433 MHz) — not flown |
 | Storage | microSD module (SPI) | microSD module (SPI) |
 | Actuators | 3 × MG996R servo | 3 × MG996R servo |
@@ -39,6 +39,11 @@ analysis, and the Rev 2 redesign.
 | Board | 2-layer, 80 × 100 mm | 2-layer, 80 × 100 mm |
 | Reverse-polarity protection | 2 × AO3401 P-MOSFET | removed (see below) |
 | Outcome | premature pad ignition; parachute did not deploy | **nominal flight** |
+
+¹ The Rev 2 schematic in this repository specifies a **WT61**. The ordered WT61 units did not
+arrive before the build, so the board flew with a spare **WT901** left over from Rev 1. The two
+WitMotion modules share the same UART interface and pin order, so the substitution was a
+drop-in; the schematic symbol was never updated to match. Firmware targets the WT901.
 
 ### Power architecture
 
@@ -158,6 +163,29 @@ Schematic review after the flight showed `SERVO2` routed to **pin 30 (RUN)** of 
 is the reset input rather than a GPIO. This was worked around on the physical board with a patch
 wire during assembly, landing the signal on **GP15** — the pin Rev 1 firmware actually drives.
 It is corrected properly in Rev 2.
+
+### The Rev 1 board
+
+| Front | Back |
+|---|---|
+| ![Rev 1 board, front](docs/images/rev1-board-front.png) | ![Rev 1 board, back](docs/images/rev1-board-back.png) |
+
+*Connector spacing left too little clearance, so parts intended for the top layer had to be
+alternated between both sides during assembly. The patch wire carrying `SERVO2` off pin 30 (RUN)
+to GP15 is visible on the back.*
+
+![First and second stage avionics mounted](docs/images/rev1-stack-mounted.jpg)
+
+*First- and second-stage avionics on the airframe mount, June configuration.*
+
+### Parachute deployment mechanism
+
+![Nose cone splitting laterally](docs/images/rev1-nosecone.gif)
+
+*Ground deployment test. The nose cone splits laterally into two halves rather than ejecting,
+giving a larger effective aperture for the canopy. On the June flight this mechanism worked as
+designed and exposed the parachute to the airstream — the canopy still failed to inflate,
+because the shroud lines were tangled.*
 
 ---
 
@@ -297,6 +325,16 @@ awkward to build and to service. Rev 2 increased inter-component clearance and r
 placement so connectors sit on accessible edges, with the ground pours split to match the
 isolated-domain topology.
 
+![Rev 2 flight board](docs/images/rev2-board-front.jpg)
+
+*Rev 2. The four 6N137 optocouplers isolating the three servo channels and the ignition line;
+connectors relocated to accessible board edges, with clearance sufficient to populate the top
+layer as intended.*
+
+![Rev 2 avionics stack mounted](docs/images/rev2-stack-mounted.jpg)
+
+*First- and second-stage avionics on the airframe mount, July configuration.*
+
 ### Result
 
 Rev 2 flew nominally in the second test launch, July 2026.
@@ -311,7 +349,7 @@ hardware/
   rev2/                  schematic and PCB (July 2026 flight configuration)
 docs/
   failure-analysis.md    Rev 1 pad anomaly write-up
-  images/                board photos, layout renders, flight data plots
+  images/                board photos and deployment-test footage
 ```
 
 Designed in **EasyEDA**.
